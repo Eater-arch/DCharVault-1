@@ -1,10 +1,7 @@
 name: Build DCharVault
 
 on:
-  # 1. Enables the manual "Run Workflow" button
   workflow_dispatch:
-  
-  # 2. Only run automatically if you change C++ or CMake files (ignore READMEs)
   push:
     branches: [ "main" ]
     paths:
@@ -14,6 +11,7 @@ on:
       - '**.qml'
       - 'CMakeLists.txt'
       - '.github/workflows/**'
+
 jobs:
   # ============================================================================
   # JOB 1: LINUX (Ubuntu)
@@ -30,10 +28,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
 
-    - name: Install Qt 6.8
+    - name: Install Qt 6.7 (Stable)
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.8.0'
+        version: '6.7.2'
         host: 'linux'
         modules: 'qt5compat qtshadertools qtquick3d'
 
@@ -44,7 +42,7 @@ jobs:
       run: cmake --build build --config Release
 
   # ============================================================================
-  # JOB 2: WINDOWS (MSVC) - MANIFEST MODE
+  # JOB 2: WINDOWS (MSVC)
   # ============================================================================
   build-windows:
     name: 🪟 Windows (MSVC)
@@ -54,33 +52,27 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # FIXED: Use Manifest Mode (read vcpkg.json)
-    - name: Install Dependencies
+    - name: Install Dependencies (VCPKG)
       run: |
-        # 1. Install using the vcpkg.json file
         vcpkg install --triplet x64-windows
-        
-        # 2. Point SODIUM_ROOT_ENV to the local 'vcpkg_installed' folder
         echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg_installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-    - name: Install Qt 6.8
+    - name: Install Qt 6.7 (Stable)
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.8.0'
+        version: '6.7.2'
         host: 'windows'
-        arch: 'win64_msvc2022_64'
-        # ADDED: Same modules as Linux for safety
+        arch: 'win64_msvc2019_64' # 6.7 uses the 2019 kit (compatible with 2022)
         modules: 'qt5compat qtshadertools qtquick3d'
 
     - name: Configure CMake
-      # We use the global toolchain + our custom ENV variable for paths
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
     - name: Build
       run: cmake --build build --config Release
 
-# ============================================================================
-  # JOB 3: ANDROID (APK Build) - FIXED HOST TOOLS
+  # ============================================================================
+  # JOB 3: ANDROID (APK Build)
   # ============================================================================
   build-android:
     name: 🤖 Android (ARM64)
@@ -110,32 +102,32 @@ jobs:
         mv vcpkg_installed/arm64-android vcpkg_installed/arm64-v8a
         echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/vcpkg_installed" >> $GITHUB_ENV
 
-    # 2. INSTALL HOST QT (Linux Desktop) - REQUIRED for tools like 'moc'
+    # 2. INSTALL HOST QT (Linux Desktop Tools)
     - name: Install Qt Host (Linux)
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.8.0'
+        version: '6.7.2'
         host: 'linux'
         target: 'desktop'
         arch: 'gcc_64'
-        cache: true  # Saves download time on future runs
+        cache: true
 
-    # 3. INSTALL TARGET QT (Android) - The actual libraries for the APK
+    # 3. INSTALL TARGET QT (Android Libraries)
     - name: Install Qt Target (Android)
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.8.0'
+        version: '6.7.2'
         host: 'linux'
         target: 'android'
         arch: 'android_arm64_v8a'
         modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
 
-    # 4. Configure CMake (Now pointing to the REAL Host Path)
+    # 4. Configure CMake
     - name: Configure CMake
       run: |
-        # Dynamic path to the 'gcc_64' folder we just installed in Step 2
-        export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.0/gcc_64
+        # Point to the 6.7.2 Host Tools
+        export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.7.2/gcc_64
         
         qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
         -DQT_ANDROID_BUILD_ALL_ABIS=ON \
