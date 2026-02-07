@@ -104,9 +104,10 @@ qt_add_qml_module(appDCharVault
     VERSION 1.0
     QML_FILES
         Main.qml
-        SOURCES model/VaultModel.cpp
-        SOURCES viewmodel/LoginViewModel.cpp
-        QML_FILES ui/login.qml
+        ui/login.qml
+    SOURCES
+        model/VaultModel.cpp
+        viewmodel/LoginViewModel.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
