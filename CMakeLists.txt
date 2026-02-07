@@ -14,17 +14,14 @@ qt_standard_project_setup(REQUIRES 6.6)
 
 # --- WINDOWS SETUP ---
 if(WIN32 AND NOT ANDROID)
-    # 1. Look for the path in System Environment Variables
     if(DEFINED ENV{SODIUM_ROOT_ENV})
         set(SODIUM_ROOT $ENV{SODIUM_ROOT_ENV})
         message(STATUS "Using Sodium from Environment: ${SODIUM_ROOT}")
     else()
-        # 2. Fallback: Use local hardcoded path
         set(SODIUM_ROOT "D:/vcpkg/installed/x64-windows")
-        message(WARNING "Environment variable SODIUM_ROOT_ENV not found. Using local fallback: ${SODIUM_ROOT}")
+        message(WARNING "Environment variable SODIUM_ROOT_ENV not found. Using local fallback.")
     endif()
 
-    # Safety Check
     if(NOT EXISTS "${SODIUM_ROOT}/include/sodium.h")
         message(FATAL_ERROR "Windows Libsodium missing! \nExpected at: ${SODIUM_ROOT}/include/sodium.h")
     endif()
@@ -32,72 +29,64 @@ if(WIN32 AND NOT ANDROID)
     # Setup Headers
     include_directories(${SODIUM_ROOT}/include)
 
-    # Find the Library explicitly
     find_library(SODIUM_LIB
         NAMES libsodium sodium
         PATHS "${SODIUM_ROOT}/lib"
         NO_DEFAULT_PATH
     )
-
-    if(NOT SODIUM_LIB)
-        message(FATAL_ERROR "Could not find 'libsodium.lib' in ${SODIUM_ROOT}/lib")
-    endif()
-
     message(STATUS "Windows Security Core linked: ${SODIUM_LIB}")
 endif()
 
 # --- ANDROID SETUP ---
 if(ANDROID)
-    # 1. Look for the path in System Environment Variables
     if(DEFINED ENV{SODIUM_ANDROID_ROOT_ENV})
         set(SODIUM_ANDROID_ROOT $ENV{SODIUM_ANDROID_ROOT_ENV})
-        message(STATUS "Using Android Sodium from Environment: ${SODIUM_ANDROID_ROOT}")
     else()
-        # 2. Fallback: Use local hardcoded path
         set(SODIUM_ANDROID_ROOT "D:/AndroidLibs/libsodium")
-        message(WARNING "Environment variable SODIUM_ANDROID_ROOT_ENV not found. Using local fallback.")
+        message(WARNING "Using hardcoded Android path.")
     endif()
 
-    # 3. Auto-detect Architecture
     message(STATUS "Configuring for Android Arch: ${ANDROID_ABI}")
-
-    # 4. Build the path to the static library (.a)
+    
+    # 1. FIX: Point to the ABI specific folder (arm64-v8a), not the root!
+    set(SODIUM_INCLUDE_PATH "${SODIUM_ANDROID_ROOT}/${ANDROID_ABI}/include")
     set(SODIUM_LIB_PATH "${SODIUM_ANDROID_ROOT}/${ANDROID_ABI}/lib/libsodium.a")
 
-    # Safety Check
     if(NOT EXISTS "${SODIUM_LIB_PATH}")
-        message(FATAL_ERROR "Android Libsodium missing for ${ANDROID_ABI}! \nExpected at: ${SODIUM_LIB_PATH}")
+        message(FATAL_ERROR "Android Libsodium missing! Checked: ${SODIUM_LIB_PATH}")
     endif()
 
-    # Setup Headers & Lib variable
-    include_directories("${SODIUM_ANDROID_ROOT}/include")
+    # 2. Add the Correct Include Path
+    include_directories("${SODIUM_INCLUDE_PATH}")
     set(SODIUM_LIB "${SODIUM_LIB_PATH}")
 
-    # Android specific logging
     find_library(ANDROID_LOG_LIB log)
-
     message(STATUS "Android Security Core linked: ${SODIUM_LIB}")
 endif()
 
 # --- LINUX / UNIX SETUP ---
 if(UNIX AND NOT ANDROID AND NOT APPLE)
-    # On Linux, we use PkgConfig to find system libraries automatically
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(SODIUM REQUIRED libsodium)
 
-    # CRITICAL FIX: Explicitly include the directories found by PkgConfig
-    # This fixes the 'sodium.h not found' error
+    # 3. FIX: Fallback to find the specific folder if pkg-config is vague
+    find_path(SODIUM_INCLUDE_DIR sodium.h 
+        PATH_SUFFIXES sodium 
+        PATHS ${SODIUM_INCLUDE_DIRS} /usr/include /usr/local/include
+    )
+    
+    # Add both paths to be safe (One for <sodium.h>, one for <sodium/sodium.h>)
     include_directories(${SODIUM_INCLUDE_DIRS})
-    link_directories(${SODIUM_LIBRARY_DIRS})
+    if(SODIUM_INCLUDE_DIR)
+        include_directories(${SODIUM_INCLUDE_DIR})
+    endif()
     
     set(SODIUM_LIB ${SODIUM_LIBRARIES})
-
-    message(STATUS "Linux Sodium Includes: ${SODIUM_INCLUDE_DIRS}")
     message(STATUS "Linux Security Core linked: ${SODIUM_LIB}")
 endif()
 
 # ==============================================================================
-# 4. TARGET DEFINITION
+# 4. APP TARGET
 # ==============================================================================
 qt_add_executable(appDCharVault
     MANUAL_FINALIZATION
@@ -115,7 +104,6 @@ qt_add_qml_module(appDCharVault
         viewmodel/LoginViewModel.cpp
 )
 
-# Qt for iOS/macOS bundle settings
 set_target_properties(appDCharVault PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER com.example.appDCharVault
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
@@ -124,7 +112,6 @@ set_target_properties(appDCharVault PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-# Link Libraries
 target_link_libraries(appDCharVault
     PRIVATE Qt6::Quick Qt6::Sql
     PRIVATE ${SODIUM_LIB}      
