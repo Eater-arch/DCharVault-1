@@ -72,7 +72,7 @@ jobs:
       run: cmake --build build --config Release
 
 # ============================================================================
-  # JOB 3: ANDROID (APK Build) - FIXED MANIFEST MODE
+  # JOB 3: ANDROID (APK Build) - FIXED HOST PATH
   # ============================================================================
   build-android:
     name: 🤖 Android (ARM64)
@@ -88,7 +88,6 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    # ADDED: Essential build tools so vcpkg can compile libsodium from source
     - name: Install System Tools
       run: |
         sudo apt-get update
@@ -97,19 +96,17 @@ jobs:
     # 1. Install Libsodium for Android using VCPKG
     - name: Install Dependencies (VCPKG)
       run: |
-        # We use the Linux version of VCPKG to build Android libraries
+        # Use Linux VCPKG to build Android libs
         git clone https://github.com/microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
         
-        # FIXED: Use Manifest Mode syntax (no package name, just triplet)
-        # This tells vcpkg: "Read vcpkg.json and build it for Android ARM64"
+        # Install libsodium for Android
         ./vcpkg/vcpkg install --triplet arm64-android
         
-        # HACK: Vcpkg creates 'vcpkg_installed/arm64-android', but Qt/CMake expects 'arm64-v8a'.
-        # We rename it so your CMakeLists.txt finds it automatically.
+        # HACK: Rename 'arm64-android' to 'arm64-v8a' so CMake finds it
         mv vcpkg_installed/arm64-android vcpkg_installed/arm64-v8a
         
-        # Point your Environment Variable to the parent folder
+        # Set Env Variable
         echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/vcpkg_installed" >> $GITHUB_ENV
 
     # 2. Install Qt 6.8 for Android
@@ -122,12 +119,17 @@ jobs:
         arch: 'android_arm64_v8a'
         modules: 'qt5compat qtshadertools qtquick3d'
 
-    # 3. Configure CMake (Qt handles the Android Toolchain automatically)
+    # 3. Configure CMake (FIXED: Added QT_HOST_PATH)
     - name: Configure CMake
       run: |
+        # We explicitly point to the Linux (Host) tools which are installed alongside the Android libs
+        # The path structure is always: /home/runner/work/<RepoName>/Qt/<Version>/gcc_64
+        export QT_HOST_PATH=/home/runner/work/DCharVault/Qt/6.8.0/gcc_64
+        
         qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
         -DQT_ANDROID_BUILD_ALL_ABIS=ON \
-        -DANDROID_ABI=arm64-v8a
+        -DANDROID_ABI=arm64-v8a \
+        -DQT_HOST_PATH=$QT_HOST_PATH
 
     # 4. Build the APK
     - name: Build APK
