@@ -1,0 +1,63 @@
+name: Build DCharVault
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-linux:
+    name: 🐧 Linux (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
+
+    - name: Install Qt 6.8
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.8.0'
+        host: 'linux'
+        modules: 'qt5compat qtshadertools qtquick3d'
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release
+
+  build-windows:
+    name: 🪟 Windows (MSVC)
+    runs-on: windows-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup VCPKG
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 'latest'
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+        vcpkgJsonGlob: 'vcpkg.json'
+
+    - name: Set Environment Variable
+      run: echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg/installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+    - name: Install Qt 6.8
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.8.0'
+        host: 'windows'
+        arch: 'win64_msvc2022_64'
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+
+    - name: Build
+      run: cmake --build build --config Release
