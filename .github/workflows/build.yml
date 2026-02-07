@@ -70,3 +70,58 @@ jobs:
 
     - name: Build
       run: cmake --build build --config Release
+
+# ============================================================================
+  # JOB 3: ANDROID (APK Build) - The "Boss Level"
+  # ============================================================================
+  build-android:
+    name: 🤖 Android (ARM64)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    # 1. Install Libsodium for Android using VCPKG
+    - name: Install Dependencies (VCPKG)
+      run: |
+        # We use the Linux version of VCPKG to build Android libraries
+        git clone https://github.com/microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.sh
+        
+        # Install libsodium for ARM64 Android
+        ./vcpkg/vcpkg install libsodium:arm64-android
+        
+        # HACK: Vcpkg creates a folder named 'arm64-android', but Android creates 'arm64-v8a'.
+        # We simply rename it so your CMakeLists.txt finds it automatically.
+        mv vcpkg_installed/arm64-android vcpkg_installed/arm64-v8a
+        
+        # Point your Environment Variable to the parent folder
+        echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/vcpkg_installed" >> $GITHUB_ENV
+
+    # 2. Install Qt 6.8 for Android
+    - name: Install Qt 6.8 (Android)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.8.0'
+        host: 'linux'
+        target: 'android'
+        arch: 'android_arm64_v8a'
+        modules: 'qt5compat qtshadertools qtquick3d'
+
+    # 3. Configure CMake (Qt handles the Android Toolchain automatically)
+    - name: Configure CMake
+      run: |
+        qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
+        -DQT_ANDROID_BUILD_ALL_ABIS=ON \
+        -DANDROID_ABI=arm64-v8a
+
+    # 4. Build the APK
+    - name: Build APK
+      run: cmake --build build --config Release
