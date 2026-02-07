@@ -1,10 +1,16 @@
 name: Build DCharVault
 
 on:
+  # 1. Manual Button (Saves Minutes!)
+  workflow_dispatch:
+  
+  # 2. Only run on Push if meaningful code changes (Ignore README updates)
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
 
 jobs:
   # ============================================================================
@@ -72,7 +78,7 @@ jobs:
       run: cmake --build build --config Release
 
 # ============================================================================
-  # JOB 3: ANDROID (APK Build) - FIXED HOST PATH
+  # JOB 3: ANDROID (APK Build) - FIXED PATHS
   # ============================================================================
   build-android:
     name: 🤖 Android (ARM64)
@@ -96,17 +102,10 @@ jobs:
     # 1. Install Libsodium for Android using VCPKG
     - name: Install Dependencies (VCPKG)
       run: |
-        # Use Linux VCPKG to build Android libs
         git clone https://github.com/microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
-        
-        # Install libsodium for Android
         ./vcpkg/vcpkg install --triplet arm64-android
-        
-        # HACK: Rename 'arm64-android' to 'arm64-v8a' so CMake finds it
         mv vcpkg_installed/arm64-android vcpkg_installed/arm64-v8a
-        
-        # Set Env Variable
         echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/vcpkg_installed" >> $GITHUB_ENV
 
     # 2. Install Qt 6.8 for Android
@@ -118,18 +117,15 @@ jobs:
         target: 'android'
         arch: 'android_arm64_v8a'
         modules: 'qt5compat qtshadertools qtquick3d'
+        cache: true  # <--- SAVES TIME: Caches the Qt download!
 
-    # 3. Configure CMake (FIXED: Added QT_HOST_PATH)
+    # 3. Configure CMake (Explicitly passing the Host Path)
     - name: Configure CMake
       run: |
-        # We explicitly point to the Linux (Host) tools which are installed alongside the Android libs
-        # The path structure is always: /home/runner/work/<RepoName>/Qt/<Version>/gcc_64
-        export QT_HOST_PATH=/home/runner/work/DCharVault/Qt/6.8.0/gcc_64
-        
         qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
         -DQT_ANDROID_BUILD_ALL_ABIS=ON \
         -DANDROID_ABI=arm64-v8a \
-        -DQT_HOST_PATH=$QT_HOST_PATH
+        -DQT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.0/gcc_64
 
     # 4. Build the APK
     - name: Build APK
