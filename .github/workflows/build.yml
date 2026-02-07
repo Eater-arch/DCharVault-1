@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-linux:
-    name: 🐧 Linux (Ubuntu)
+    name: Linux (Ubuntu)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -32,22 +32,23 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
 
+# ============================================================================
+  # JOB 2: WINDOWS (MSVC)
+  # ============================================================================
   build-windows:
-    name: 🪟 Windows (MSVC)
+    name: Windows (MSVC)
     runs-on: windows-latest
+    
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Setup VCPKG
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55efd'
-        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        vcpkgJsonGlob: 'vcpkg.json'
-
-    - name: Set Environment Variable
-      run: echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg/installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    #Instead of downloading vcpkg, we use the one already on the server.
+    - name: Install Libsodium
+      run: |
+        vcpkg install libsodium:x64-windows
+        # We tell your CMakeLists where to find it using the system variable
+        echo "SODIUM_ROOT_ENV=$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Install Qt 6.8
       uses: jurplel/install-qt-action@v3
@@ -57,7 +58,8 @@ jobs:
         arch: 'win64_msvc2022_64'
 
     - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      # use the system-provided toolchain file
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
     - name: Build
       run: cmake --build build --config Release
