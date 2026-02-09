@@ -9,7 +9,7 @@ class DiaryManager{
     public:
         const std::vector<DiaryEntry>& readEntries() const;
         const DiaryEntry* readEntry(const std::string& id) const;
-        const DiaryEntry& createEntry(const std::string& title, const std::string& content); // returns reference to newely created entry(reference to the stored object, not a temporary)
+        std::string createEntry(const std::string& title, const std::string& content); // returns entry id 
         bool updateEntry(const std::string& id, const std::string& title, const std::string& content);
         bool deleteEntry(const std::string& id);
     
