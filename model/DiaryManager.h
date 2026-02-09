@@ -15,6 +15,7 @@ class DiaryManager{
     
     private:
         std::vector<DiaryEntry> entries;
+        std::string generateID();
 
 };
 
