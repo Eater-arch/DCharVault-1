@@ -1,14 +1,16 @@
 #ifndef DIARYENTRY_H
 #define DIARYENTRY_H
 #include<string>
+#include<cstdint> 
+
 
 struct DiaryEntry{
-    bool entryIsBookmarked = false;
-    std::string entryId;
-    std::string entryCreatedAt;
-    std::string entryUpdatedAt;
-    std::string entryTitle;
-    std::string entryContent;
+    bool bookmarked = false;
+    int64_t createdAt;
+    int64_t updatedAt;
+    std::string id;
+    std::string title;
+    std::string content;
 };
 
 
