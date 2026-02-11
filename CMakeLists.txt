@@ -100,8 +100,13 @@ qt_add_qml_module(appDCharVault
         Main.qml
         ui/login.qml
     SOURCES 
+        model/DiaryEntry.h
+        model/DiaryManager.h
+        model/DiaryEntry.cpp
         model/VaultModel.cpp
         viewmodel/LoginViewModel.cpp
+        QML_FILES ui/HomeView.qml
+        QML_FILES ui/EditorView.qml
 )
 
 set_target_properties(appDCharVault PROPERTIES
