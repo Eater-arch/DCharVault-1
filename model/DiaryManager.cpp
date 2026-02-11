@@ -1,5 +1,51 @@
 #include"DiaryManager.h"
 
+[[nodiscard]] DiaryError DiaryManager::setTitle(const std::string& id, const std::string& newTitle) const noexcept{
+    if(id.empty()) return DiaryError::EmptyId;
+    // if (!isValidId(id)) return nullptr; -- to be implemented later
+    for(const auto& entry : entries){
+        if(entry.id == id){
+            entry.title = newTitle;
+            // update time here too
+            return DiaryError::None;
+        }
+    }
+    return DiaryError::EntryNotFound;
+}
+
+[[nodiscard]] DiaryError DiaryManager::setContent(const std::string& id, const std::string& newContent) const noexcept{
+    if(id.empty()) return DiaryError::EmptyId;
+    for(const auto& entry : entries){
+        if(entry.id == id){
+            entry.content = newContent;
+            // update time here too
+            return DiaryError::None;
+        }
+    }
+    return DiaryError::EntryNotFound;
+}
+
+const std::string* DiaryManager::getTitle(const std::string& id) const noexcept{
+    if(id.empty()) return nullptr;
+    // if (!isValidId(id)) return nullptr; -- to be implemented later
+    for(const auto& entry : entries){
+        if(entry.id==id){
+            return &entry.title;
+        }
+    }
+    return nullptr;
+}
+
+const std::string* DiaryManager::getContent(const std::string& id) const noexcept{
+    if(id.empty()) return nullptr;
+    // if (!isValidId(id)) return nullptr; -- to be implemented later
+    for(const auto &entry : entries){
+        if(entry.id == id){
+            return &entry.content;
+        }
+    }
+    return nullptr;
+}
 
 const DiaryEntry* DiaryManager::readEntry(std::string& id) const noexcept{ // not & since reference returns cannot be null if id page do not found
     if(id.empty()) return nullptr;

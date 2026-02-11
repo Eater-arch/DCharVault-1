@@ -50,11 +50,20 @@ class DiaryManager{
         //[[nodiscard]] : if someone ignore return value error then warn them!!
         [[nodiscard]] DiaryError updateEntry(const std::string& id, const std::string& title, const std::string& content);
         [[nodiscard]] DiaryError deleteEntry(const std::string& id);
-    
+
     private:
         std::vector<DiaryEntry> entries;
-        
 
+        // validity checkers
+        bool isValidId(const std::string& id) const noexcept;
+
+        // helper setters
+        [[nodiscard]] DiaryError setTitle(const std::string& id, const std::string& newTitle) const noexcept;
+        [[nodiscard]] DiaryError setContent(const std::string& id, const std::string& newContent) const noexcept;
+        
+        // helper getters
+        const std::string* getTitle(const std::string& id) const noexcept;
+        const std::string* getContent(const std::string& id) const noexcept;
 };
 
 #endif
