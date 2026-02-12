@@ -14,151 +14,129 @@ on:
 
 jobs:
 
-  # ============================================================================
-  # JOB 1: LINUX
-  # ============================================================================
+# ============================================================================
+# LINUX
+# ============================================================================
   build-linux:
-    name: 🐧 Linux (Ubuntu)
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
+    - run: sudo apt-get update && sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
 
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v3
+    - uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
         host: 'linux'
-        modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
 
-    - name: Configure
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-    - name: Build
-      run: cmake --build build --config Release
+    - run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+    - run: cmake --build build --config Release
 
 
-  # ============================================================================
-  # JOB 2: WINDOWS
-  # ============================================================================
+# ============================================================================
+# WINDOWS
+# ============================================================================
   build-windows:
-    name: 🪟 Windows (MSVC)
     runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Libsodium
-      run: |
-        vcpkg install --triplet x64-windows
-        echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg_installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    - run: |
+        vcpkg install libsodium:x64-windows
+        echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg_installed/x64-windows" | Out-File $env:GITHUB_ENV -Append
 
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v3
+    - uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
         host: 'windows'
         arch: 'win64_msvc2019_64'
-        modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
 
-    - name: Configure
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
-
-    - name: Build
-      run: cmake --build build --config Release
+    - run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+    - run: cmake --build build --config Release
 
 
-  # ============================================================================
-  # JOB 3: ANDROID (FIXED)
-  # ============================================================================
+# ============================================================================
+# ANDROID — REAL FIXED VERSION
+# ============================================================================
   build-android:
-    name: 🤖 Android (ARM64)
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
+    - uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Install Tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential tar curl zip unzip
+    - run: sudo apt-get update && sudo apt-get install -y build-essential unzip
 
-    # Install Libsodium
-    - name: Install Libsodium (VCPKG)
+# 🔥 STEP 1 — FORCE SDK 33
+    - name: Install Android SDK 33
+      run: |
+        yes | sdkmanager --licenses
+
+        sdkmanager \
+          "platforms;android-33" \
+          "build-tools;33.0.2" \
+          "platform-tools" \
+          "ndk;25.2.9519653"
+
+# 🔥 STEP 2 — DELETE BROKEN SDK 35
+    - name: Remove broken SDK 35
+      run: |
+        sudo rm -rf /usr/local/lib/android/sdk/platforms/android-35*
+        sudo rm -rf /usr/local/lib/android/sdk/build-tools/35*
+
+# Install libsodium
+    - name: Install Libsodium
       run: |
         git clone https://github.com/microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
         ./vcpkg/vcpkg install libsodium --triplet arm64-android --classic
 
-        mkdir -p libs/arm64-v8a
-        cp -r vcpkg/installed/arm64-android/include libs/arm64-v8a/
         mkdir -p libs/arm64-v8a/lib
+        cp -r vcpkg/installed/arm64-android/include libs/arm64-v8a/
         cp vcpkg/installed/arm64-android/lib/libsodium.a libs/arm64-v8a/lib/
 
         echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/libs" >> $GITHUB_ENV
 
-    # Install Qt Host
-    - name: Install Qt Host
-      uses: jurplel/install-qt-action@v3
+# Qt
+    - uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
         host: 'linux'
         target: 'desktop'
-        cache: true
 
-    # Install Qt Android
-    - name: Install Qt Target
-      uses: jurplel/install-qt-action@v3
+    - uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
         host: 'linux'
         target: 'android'
         arch: 'android_arm64_v8a'
-        modules: 'qt5compat qtshadertools qtquick3d'
-        cache: true
 
-    # 🔥 FIX: Remove broken Android 36 SDK
-    - name: Remove Android 36 (Critical Fix)
-      run: |
-        echo "Cleaning incompatible SDK 36..."
-        sudo rm -rf /usr/local/lib/android/sdk/platforms/android-36*
-        sudo rm -rf /usr/local/lib/android/sdk/build-tools/36*
-
-    # Configure
-    - name: Configure CMake
+# Configure
+    - name: Configure
       run: |
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.6.3/gcc_64
 
-        qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
-        -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
-        -DANDROID_ABI=arm64-v8a \
-        -DANDROID_PLATFORM=android-28 \
-        -DQT_ANDROID_COMPILE_SDK_VERSION=33 \
-        -DQT_ANDROID_TARGET_SDK_VERSION=33 \
-        -DQT_HOST_PATH=$QT_HOST_PATH
+        qt-cmake -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DANDROID_ABI=arm64-v8a \
+          -DANDROID_PLATFORM=android-33 \
+          -DQT_ANDROID_COMPILE_SDK_VERSION=33 \
+          -DQT_ANDROID_TARGET_SDK_VERSION=33 \
+          -DQT_HOST_PATH=$QT_HOST_PATH
 
-    # Build APK
-    - name: Build APK
-      run: cmake --build build --config Release
+# Build
+    - run: cmake --build build --config Release
 
-    # Upload APK
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
+# Upload APK
+    - uses: actions/upload-artifact@v4
       with:
         name: DCharVault-Android
         path: build/**/*.apk
-        if-no-files-found: error
-        retention-days: 1
