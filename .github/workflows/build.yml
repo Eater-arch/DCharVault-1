@@ -14,73 +14,18 @@ on:
 
 jobs:
 
-  # ============================================================================
-  # JOB 1: LINUX
-  # ============================================================================
-  build-linux:
-    name: 🐧 Linux (Ubuntu)
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install System Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
-
-    - name: Install Qt 6.6.3
-      uses: jurplel/install-qt-action@v3
-      with:
-        version: '6.6.3'
-        host: 'linux'
-        modules: 'qt5compat qtshadertools qtquick3d'
-        cache: true
-
-    - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-    - name: Build
-      run: cmake --build build --config Release
 
 
   # ============================================================================
-  # JOB 2: WINDOWS
-  # ============================================================================
-  build-windows:
-    name: 🪟 Windows (MSVC)
-    runs-on: windows-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install Dependencies (VCPKG)
-      run: |
-        vcpkg install --triplet x64-windows
-        echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg_installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-    - name: Install Qt 6.6.3
-      uses: jurplel/install-qt-action@v3
-      with:
-        version: '6.6.3'
-        host: 'windows'
-        arch: 'win64_msvc2019_64'
-        modules: 'qt5compat qtshadertools qtquick3d'
-        cache: true
-
-    - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
-
-    - name: Build
-      run: cmake --build build --config Release
-
-
-  # ============================================================================
-  # JOB 3: ANDROID (FINAL PERMANENT FIX)
+  # JOB 3: ANDROID (ACTUALLY FINAL FIX)
   # ============================================================================
   build-android:
     name: 🤖 Android (ARM64)
     runs-on: ubuntu-latest
     
+    env:
+      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+
     steps:
     - uses: actions/checkout@v4
 
@@ -93,9 +38,27 @@ jobs:
     - name: Install System Tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential tar curl zip unzip wget
+        sudo apt-get install -y build-essential unzip wget
 
-    # ✅ INSTALL ONLY ANDROID SDK 33 (REAL FIX)
+    # ✅ CREATE SDK ROOT PROPERLY
+    - name: Prepare Android SDK Directory
+      run: mkdir -p $ANDROID_SDK_ROOT
+
+    # ✅ INSTALL CMDLINE TOOLS
+    - name: Install Android Commandline Tools
+      run: |
+        cd $ANDROID_SDK_ROOT
+
+        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
+        unzip tools.zip
+        rm tools.zip
+
+        mkdir -p cmdline-tools/latest
+        mv cmdline-tools/* cmdline-tools/latest/ || true
+
+        echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+
+    # ✅ INSTALL SDK 33
     - name: Install Android SDK 33
       run: |
         yes | sdkmanager --licenses
@@ -105,8 +68,6 @@ jobs:
           "build-tools;33.0.2" \
           "platform-tools" \
           "ndk;27.3.13750724"
-
-        echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
 
 
     # Install libsodium
@@ -124,7 +85,7 @@ jobs:
         echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/libs" >> $GITHUB_ENV
 
 
-    # Install Qt Host Tools
+    # Install Qt Host
     - name: Install Qt Host
       uses: jurplel/install-qt-action@v3
       with:
@@ -145,7 +106,7 @@ jobs:
         cache: true
 
 
-    # 🚀 FORCE QT TO USE SDK 33 ONLY
+    # Configure build
     - name: Configure CMake
       run: |
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.6.3/gcc_64
@@ -172,3 +133,4 @@ jobs:
         path: build/**/*.apk
         if-no-files-found: error
         retention-days: 1
+
