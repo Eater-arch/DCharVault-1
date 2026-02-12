@@ -1,10 +1,10 @@
 name: Build DCharVault
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Manual button
   push:
     branches: [ "main" ]
-    paths:
+    paths: # Only run on code changes to save minutes
       - '**.cpp'
       - '**.h'
       - '**.hpp'
@@ -13,130 +13,162 @@ on:
       - '.github/workflows/**'
 
 jobs:
-
-# ============================================================================
-# LINUX
-# ============================================================================
+  # ============================================================================
+  # JOB 1: LINUX (Ubuntu) - Qt 6.6.3 LTS
+  # ============================================================================
   build-linux:
+    name: 🐧 Linux (Ubuntu)
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-    - run: sudo apt-get update && sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
 
-    - uses: jurplel/install-qt-action@v3
+    - name: Install Qt 6.6.3
+      uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
         host: 'linux'
+        modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
 
-    - run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-    - run: cmake --build build --config Release
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
+    - name: Build
+      run: cmake --build build --config Release
 
-# ============================================================================
-# WINDOWS
-# ============================================================================
+  # ============================================================================
+  # JOB 2: WINDOWS (MSVC) - Qt 6.6.3 LTS
+  # ============================================================================
   build-windows:
+    name: 🪟 Windows (MSVC)
     runs-on: windows-latest
-
+    
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-    - run: |
-        vcpkg install libsodium:x64-windows
-        echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg_installed/x64-windows" | Out-File $env:GITHUB_ENV -Append
+    - name: Install Dependencies (VCPKG)
+      run: |
+        vcpkg install --triplet x64-windows
+        echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg_installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-    - uses: jurplel/install-qt-action@v3
+    - name: Install Qt 6.6.3
+      uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
         host: 'windows'
         arch: 'win64_msvc2019_64'
+        modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
 
-    - run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
-    - run: cmake --build build --config Release
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
-
-# ============================================================================
-# ANDROID — REAL FIXED VERSION
-# ============================================================================
+    - name: Build
+      run: cmake --build build --config Release
+      
+  # ============================================================================
+  # JOB 3: ANDROID (ARM64) - Qt 6.6.3 LTS
+  # ============================================================================
   build-android:
+    name: 🤖 Android (ARM64)
     runs-on: ubuntu-latest
-
+    
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-    - uses: actions/setup-java@v4
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
 
-    - run: sudo apt-get update && sudo apt-get install -y build-essential unzip
-
-# 🔥 STEP 1 — FORCE SDK 33
-    - name: Install Android SDK 33
+    - name: Install System Tools
       run: |
-        yes | sdkmanager --licenses
+        sudo apt-get update
+        sudo apt-get install -y build-essential tar curl zip unzip
 
-        sdkmanager \
-          "platforms;android-33" \
-          "build-tools;33.0.2" \
-          "platform-tools" \
-          "ndk;25.2.9519653"
-
-# 🔥 STEP 2 — DELETE BROKEN SDK 35
-    - name: Remove broken SDK 35
+    # 1. FIX: Added '--classic' to ignore vcpkg.json and force manual install
+    - name: Install Libsodium (VCPKG)
       run: |
-        sudo rm -rf /usr/local/lib/android/sdk/platforms/android-35*
-        sudo rm -rf /usr/local/lib/android/sdk/build-tools/35*
-
-# Install libsodium
-    - name: Install Libsodium
-      run: |
+        # A. Bootstrap Vcpkg
         git clone https://github.com/microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
+
+        # B. Install Libsodium (Use --classic to bypass Manifest Mode error)
         ./vcpkg/vcpkg install libsodium --triplet arm64-android --classic
 
-        mkdir -p libs/arm64-v8a/lib
+        # C. Re-arrange files to match your CMakeLists.txt structure
+        # Classic mode installs to: vcpkg/installed/arm64-android
+        
+        mkdir -p libs/arm64-v8a
         cp -r vcpkg/installed/arm64-android/include libs/arm64-v8a/
+        mkdir -p libs/arm64-v8a/lib
+        
+        # Copy the static library
         cp vcpkg/installed/arm64-android/lib/libsodium.a libs/arm64-v8a/lib/
-
+        
+        # Set the ENV variable to the parent 'libs' folder
         echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/libs" >> $GITHUB_ENV
 
-# Qt
-    - uses: jurplel/install-qt-action@v3
+    # 2. INSTALL HOST QT (Linux Tools needed to build Android)
+    - name: Install Qt Host
+      uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
         host: 'linux'
         target: 'desktop'
+        cache: true
 
-    - uses: jurplel/install-qt-action@v3
+    # 3. INSTALL TARGET QT (Android Libs)
+    - name: Install Qt Target
+      uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
         host: 'linux'
         target: 'android'
         arch: 'android_arm64_v8a'
-
-# Configure
-    - name: Configure
+        modules: 'qt5compat qtshadertools qtquick3d'
+        cache: true
+        
+    # 3.5 NUCLEAR FIX: Delete the broken Android 36 SDK
+    - name: Nuke Android 36
       run: |
+        echo "Deleting incompatible Android 36 platform..."
+        sudo rm -rf ${ANDROID_SDK_ROOT}/platforms/android-36*
+        sudo rm -rf ${ANDROID_SDK_ROOT}/build-tools/36*
+        echo "Android 36 deleted. Build will now fall back to Stable 34/33."
+    
+    # 4. Configure CMake
+    - name: Configure CMake
+      run: |
+        # Point to the 6.6.3 Host Tools
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.6.3/gcc_64
+        
+        qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
+        -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
+        -DANDROID_ABI=arm64-v8a \
+        -DANDROID_PLATFORM=android-28 \
+        -DQT_ANDROID_COMPILE_SDK_VERSION=33 \
+        -DQT_ANDROID_TARGET_SDK_VERSION=33 \
+        -DQT_HOST_PATH=$QT_HOST_PATH
 
-        qt-cmake -B build \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DANDROID_ABI=arm64-v8a \
-          -DANDROID_PLATFORM=android-33 \
-          -DQT_ANDROID_COMPILE_SDK_VERSION=33 \
-          -DQT_ANDROID_TARGET_SDK_VERSION=33 \
-          -DQT_HOST_PATH=$QT_HOST_PATH
+    # 5. Build the APK
+    - name: Build APK
+      run: cmake --build build --config Release
 
-# Build
-    - run: cmake --build build --config Release
-
-# Upload APK
-    - uses: actions/upload-artifact@v4
+    # 6. UPLOAD ARTIFACT (Downloadable APK)
+    - name: Upload Android APK
+      uses: actions/upload-artifact@v4
       with:
         name: DCharVault-Android
-        path: build/**/*.apk
+        path: build/**/*.apk  # The '**' finds the APK even if it's buried in subfolders
+        if-no-files-found: error
+        retention-days: 1     # Deletes after 24 hours to save storage
