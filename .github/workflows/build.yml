@@ -73,7 +73,7 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
       
-# ============================================================================
+  # ============================================================================
   # JOB 3: ANDROID (ARM64) - Qt 6.6.3 LTS
   # ============================================================================
   build-android:
@@ -137,7 +137,7 @@ jobs:
         sudo rm -rf ${ANDROID_SDK_ROOT}/platforms/android-35*
         sudo rm -rf ${ANDROID_SDK_ROOT}/build-tools/35*
     
-    # 4. Configure CMake (SWITCHED TO DEBUG)
+    # 4. Configure CMake (DEBUG MODE)
     - name: Configure CMake
       run: |
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.6.3/gcc_64
@@ -150,7 +150,7 @@ jobs:
         -DQT_ANDROID_TARGET_SDK_VERSION=33 \
         -DQT_HOST_PATH=$QT_HOST_PATH
 
-    # 5. Build the APK (SWITCHED TO DEBUG)
+    # 5. Build the APK (DEBUG MODE)
     - name: Build APK
       run: cmake --build build --config Debug
 
@@ -162,6 +162,3 @@ jobs:
         path: build/**/*.apk
         if-no-files-found: error
         retention-days: 1
-        path: build/**/*.apk  # The '**' finds the APK even if it's buried in subfolders
-        if-no-files-found: error
-        retention-days: 1     # Deletes after 24 hours to save storage
