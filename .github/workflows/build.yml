@@ -139,12 +139,15 @@ jobs:
         cache: true
         
     # 3.5 NUCLEAR FIX: Delete the broken Android 36 SDK
-    - name: Nuke Android 36
+    - name: Nuke Newer Android SDKs
       run: |
-        echo "Deleting incompatible Android 36 platform..."
+        echo "Deleting incompatible Android 35+ platform..."
         sudo rm -rf ${ANDROID_SDK_ROOT}/platforms/android-36*
         sudo rm -rf ${ANDROID_SDK_ROOT}/build-tools/36*
-        echo "Android 36 deleted. Build will now fall back to Stable 34/33."
+        
+        sudo rm -rf ${ANDROID_SDK_ROOT}/platforms/android-35*
+        sudo rm -rf ${ANDROID_SDK_ROOT}/build-tools/35*
+        echo "Cleanup done. Build will now force to stable android 34."
     
     # 4. Configure CMake
     - name: Configure CMake
