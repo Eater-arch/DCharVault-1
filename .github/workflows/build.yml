@@ -14,11 +14,79 @@ on:
 
 jobs:
 
+# ============================================================================
+# JOB 1: WINDOWS BUILD
+# ============================================================================
+  build-windows:
+    name: 🪟 Windows
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.6.3'
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_msvc2019_64'
+        cache: true
+
+    - name: Configure
+      run: qt-cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DCharVault-Windows
+        path: build/Release/*
+        retention-days: 1
 
 
-  # ============================================================================
-  # JOB 3: ANDROID (ACTUALLY FINAL FIX)
-  # ============================================================================
+# ============================================================================
+# JOB 2: LINUX BUILD
+# ============================================================================
+  build-linux:
+    name: 🐧 Linux
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install System Packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libgl1-mesa-dev
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.6.3'
+        host: 'linux'
+        target: 'desktop'
+        cache: true
+
+    - name: Configure
+      run: qt-cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DCharVault-Linux
+        path: build/*
+        retention-days: 1
+
+
+# ============================================================================
+# JOB 3: ANDROID BUILD (FULLY FIXED)
+# ============================================================================
   build-android:
     name: 🤖 Android (ARM64)
     runs-on: ubuntu-latest
@@ -29,10 +97,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup Java JDK
+    - name: Setup Java
       uses: actions/setup-java@v4
       with:
-        distribution: 'temurin'
+        distribution: temurin
         java-version: '17'
 
     - name: Install System Tools
@@ -40,15 +108,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential unzip wget
 
-    # ✅ CREATE SDK ROOT PROPERLY
-    - name: Prepare Android SDK Directory
+    # Prepare SDK folder
+    - name: Prepare Android SDK
       run: mkdir -p $ANDROID_SDK_ROOT
 
-    # ✅ INSTALL CMDLINE TOOLS
-    - name: Install Android Commandline Tools
+    # Install cmdline tools
+    - name: Install Android CLI Tools
       run: |
         cd $ANDROID_SDK_ROOT
-
         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
         unzip tools.zip
         rm tools.zip
@@ -58,8 +125,8 @@ jobs:
 
         echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
 
-    # ✅ INSTALL SDK 33
-    - name: Install Android SDK 33
+    # Install SDK 33 ONLY (fixes resource linking crash)
+    - name: Install Android SDK
       run: |
         yes | sdkmanager --licenses
 
@@ -69,9 +136,8 @@ jobs:
           "platform-tools" \
           "ndk;27.3.13750724"
 
-
     # Install libsodium
-    - name: Install Libsodium (VCPKG)
+    - name: Install Libsodium
       run: |
         git clone https://github.com/microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
@@ -84,7 +150,6 @@ jobs:
 
         echo "SODIUM_ANDROID_ROOT_ENV=${{ github.workspace }}/libs" >> $GITHUB_ENV
 
-
     # Install Qt Host
     - name: Install Qt Host
       uses: jurplel/install-qt-action@v3
@@ -95,7 +160,7 @@ jobs:
         cache: true
 
     # Install Qt Android
-    - name: Install Qt Target
+    - name: Install Qt Android
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.6.3'
@@ -105,25 +170,22 @@ jobs:
         modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
 
-
-    # Configure build
+    # Configure CMake
     - name: Configure CMake
       run: |
         export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.6.3/gcc_64
 
         qt-cmake -B build -DCMAKE_BUILD_TYPE=Release \
-        -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
-        -DANDROID_ABI=arm64-v8a \
-        -DANDROID_PLATFORM=android-28 \
-        -DQT_ANDROID_COMPILE_SDK_VERSION=33 \
-        -DQT_ANDROID_TARGET_SDK_VERSION=33 \
-        -DQT_HOST_PATH=$QT_HOST_PATH
-
+          -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
+          -DANDROID_ABI=arm64-v8a \
+          -DANDROID_PLATFORM=android-28 \
+          -DQT_ANDROID_COMPILE_SDK_VERSION=33 \
+          -DQT_ANDROID_TARGET_SDK_VERSION=33 \
+          -DQT_HOST_PATH=$QT_HOST_PATH
 
     # Build APK
     - name: Build APK
       run: cmake --build build --config Release
-
 
     # Upload artifact
     - name: Upload Android APK
@@ -133,4 +195,3 @@ jobs:
         path: build/**/*.apk
         if-no-files-found: error
         retention-days: 1
-
