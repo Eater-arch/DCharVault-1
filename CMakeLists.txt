@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Sql)
+
 qt_standard_project_setup(REQUIRES 6.6)
 
 # ==============================================================================
@@ -108,6 +109,8 @@ qt_add_qml_module(appDCharVault
         QML_FILES ui/HomeView.qml
         QML_FILES ui/EditorView.qml
         SOURCES model/DiaryManager.cpp
+        QML_FILES ui/EditorToolbar.qml
+        QML_FILES ui/SidebarView.qml
 )
 
 set_target_properties(appDCharVault PROPERTIES
@@ -119,7 +122,8 @@ set_target_properties(appDCharVault PROPERTIES
 )
 
 target_link_libraries(appDCharVault
-    PRIVATE Qt6::Quick Qt6::Sql
+    PRIVATE Qt6::Quick
+    PRIVATE Qt6::Sql
     PRIVATE ${SODIUM_LIB}      
     PRIVATE ${ANDROID_LOG_LIB} 
 )
