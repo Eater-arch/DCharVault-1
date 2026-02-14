@@ -2,65 +2,55 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-Page{
+Page {
     id: root
-    title: "DCharVault"
 
-    // signal to tell Main.qml to switch screens
-    signal createClicked();
+    // Detect Mobile
+    readonly property bool isMobile: true// Change to 'true' to test Drawer on PC
 
-    // background color
-    background: Rectangle{ color: "#1e1e1e"}
+    background: Rectangle { color: "#FAFAFA" }
 
-    // list
-    ListView{
-        id: diaryList
-        anchors.fill: parent
-        spacing: 10
-        clip: true
+    // --- 1. THE DRAWER (For Mobile Only) ---
+    Drawer {
+        id: mobileDrawer
+        width: Math.min(parent.width * 0.8, 300)
+        height: parent.height
+        interactive: root.isMobile // Only swipe-able on mobile
 
-        // FAKE DATA (We will delete this later and connect C++)
-        model: ListModel {
-            ListElement { date: "2025-02-09"; title: "Started Project"; preview: "Today I set up the repo..." }
-            ListElement { date: "2025-02-10"; title: "C++ is fast"; preview: "Learned about StackView..." }
-        }
-
-        delegate: Rectangle{
-            width: diaryList.width*0.95
-            height: 80
-            anchors.horizontalCenter: parent.horizontalCenter
-            color: "#2d2d2d"
-            radius: 10
-            ColumnLayout{
-                anchors.fill: parent
-                anchors.margins: 10
-                Text { text: model.date; color: "#aaaaaa"; font.pixelSize: 12 }
-                Text { text: model.title; color: "white"; font.bold: true; font.pixelSize: 16 }
-                Text { text: model.preview; color: "#cccccc"; font.pixelSize: 14; elide: Text.ElideRight }
-            }
+        SidebarView {
+            anchors.fill: parent
+            onEntrySelected: mobileDrawer.close() // Close drawer after picking
         }
     }
 
-    // the 'FAB' btn (Floating Action Btn)
-    Button{
-        text: "+"
-        width: 60
-        height: 60
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.margins: 20
-        background: Rectangle{
-            color: "#007BFF" // blue accent
-            radius: 30
+    // --- 2. THE MAIN LAYOUT ---
+    SplitView {
+        anchors.fill: parent
+        orientation: Qt.Horizontal
+
+        // Custom Handle (Invisible on mobile, nice on desktop)
+        handle: Rectangle {
+            implicitWidth: root.isMobile ? 0 : 1 // No handle on mobile
+            color: "#E0E0E0"
         }
-        contentItem: Text{
-            text:"+"
-            color: "white"
-            font.pixelSize: 30
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
+
+        // --- LEFT PANE (Desktop Only) ---
+        // On Mobile, we hide this because we use the Drawer instead
+        SidebarView {
+            visible: !root.isMobile
+            SplitView.preferredWidth: 300
+            SplitView.minimumWidth: 200
+            SplitView.maximumWidth: 400
         }
-        // When clicked, fire the signal
-        onClicked: root.createClicked()
+
+        // --- RIGHT PANE (Editor) ---
+        // Always visible
+        EditorView {
+            SplitView.fillWidth: true
+
+            // Link the Mobile Menu Button to the Drawer
+            // (We will add a menu button to EditorToolbar later if needed)
+            onMenuClicked: mobileDrawer.open()
+        }
     }
 }

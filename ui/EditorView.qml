@@ -7,6 +7,8 @@ import QtQuick.Controls.Material
 Page {
     id: root
 
+    signal menuClicked()
+
     // 1 settings
     // readonly property bool isMobile: Qt.platform.os === "android"
     // for testing switched to android view
@@ -23,7 +25,7 @@ Page {
         id: toolbarComponent
         EditorToolbar {
             isMobile: root.isMobile
-
+            onMenuClicked: root.menuClicked()
             // Handle signal from toolbar
             onBoldClicked: console.log("Bold requested")
             onItalicClicked: console.log("Italic requested")

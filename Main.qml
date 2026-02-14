@@ -1,26 +1,24 @@
 import QtQuick
 import QtQuick.Controls
-
-// We import the folder where EditorView.qml lives
+import QtQuick.Controls.Material
+// We import the folder where .qml lives
 import "ui"
 
 ApplicationWindow {
     id: window
     visible: true
     width: 800
-    height: 900
+    height: 700
     title: "AegisJournal - Editor Test"
 
-    // Set a nice background color so the "paper" stands out
-    color: "#F2F2F2"
+    // --- GLOBAL STYLE ---
+        // This applies to the whole app (Sidebar, Editor, everything)
+        Material.theme: Material.Light
+        Material.accent: Material.DeepOrange // The color of the "+" button and active fields
+        Material.primary: "#FFFFFF"
 
-    // Load ONLY the EditorView
-    EditorView {
+
+    HomeView{
         anchors.fill: parent
-        anchors.margins: 0 // Edges touch the window
-
-        // Test Data: Pre-fill some text to see if it looks right
-        entryTitle: "Testing the Editor"
-        entryContent: "<b>Hello!</b><br>This is a test of the <i>rich text</i> editor.<br><br>Type here to test the scrolling..."
     }
 }

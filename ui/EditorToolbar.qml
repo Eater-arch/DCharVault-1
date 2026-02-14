@@ -21,8 +21,7 @@ ToolBar {
     signal highlighterClicked
     signal doneClicked
     signal fontSelected(string fontName)
-    // new signal to tell editor the font changed
-    signal mobileMenuClicked
+    signal menuClicked
 
     // 2 Visuals
     Material.background: "#FFFFFF"
@@ -42,13 +41,20 @@ ToolBar {
         anchors.fill: parent
         spacing: 5
 
-        ToolButton{
+        // 1. MOBILE MENU BUTTON (Hamburger)
+        ToolButton {
+            visible: root.isMobile
+            text: "☰" // Hamburger Icon
+            font.pixelSize: 20
+            onClicked: root.menuClicked() // Emit signal
+        }
+
+        ToolButton {
             id: insert
             text: "+"
             font.bold: true
             font.pixelSize: 20
             Layout.preferredHeight: 50
-
         }
 
         //Font Family(hidden on mobile
@@ -57,14 +63,13 @@ ToolBar {
             model: ["Segoe UI", "Georgia", "Roboto"]
             Layout.preferredWidth: 150
             Layout.preferredHeight: 50
-            Layout.leftMargin: 5// Breathing room
-
+            Layout.leftMargin: 5 // Breathing room
         }
         ComboBox {
             model: ["12", "14", "16", "18"]
             Layout.preferredWidth: 69
             Layout.preferredHeight: 50
-            Layout.leftMargin: 5// Breathing room
+            Layout.leftMargin: 5 // Breathing room
         }
 
         ToolButton {
@@ -100,44 +105,6 @@ ToolBar {
         // "Done" Button (Only for Mobile)
         Item {
             Layout.fillWidth: true
-        }
-
-        // Mobile menu button (visible only on Mobile)
-        ToolButton {
-            visible: root.isMobile
-            text: "Aa ▼" // improved text to show it has fonts
-
-            onClicked: mobileMenu.open() // Opens the menu instead of just closing keyboard
-
-            // This Menu lives "inside" the button logic
-            Menu {
-                id: mobileMenu
-                y: -height // makes it pop up instead of down(since we are at bottom)
-
-                // The Fonts (Moved inside here for Mobile)
-                Label {
-                    text: "Select Font"
-                } // header
-                MenuItem {
-                    text: "Segoe UI"
-                    onTriggered: root.fontSelected("Segoe UI")
-                }
-                MenuItem {
-                    text: "Georgia"
-                    onTriggered: root.fontSelected("Georgia")
-                }
-                MenuItem {
-                    text: "Roboto"
-                    onTriggered: root.fontSelected("Roboto")
-                }
-
-                MenuSeparator {}
-
-                MenuItem {
-                    text: "▼ Hide Keyboard"
-                    onTriggered: root.doneClicked()
-                }
-            }
         }
     }
 }
