@@ -10,6 +10,7 @@ Item {
     // We tell the parent what happened. We don't change views ourselves.
     signal entrySelected(int index)
     signal createClicked()
+    signal createDiaryClicked()
     signal menuClicked() // Only used on mobile to close drawer
 
     // Background
@@ -54,6 +55,28 @@ Item {
                         verticalAlignment: Text.AlignVCenter
                         elide: Text.ElideRight
                     }
+                }
+
+                // The Big "Add" Button
+                Button {
+                    text: "+"
+                    Layout.preferredWidth: 45
+                    Layout.preferredHeight: 45
+
+                    // Make it a Circle
+                    background: Rectangle {
+                        color: "#212121" // Black button
+                        radius: width / 2
+                    }
+                    contentItem: Text {
+                        text: "+"
+                        color: "white"
+                        font.pixelSize: 24
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    onClicked: root.createDiaryClicked()
                 }
             }
         }
