@@ -5,7 +5,7 @@ project(DCharVault VERSION 0.1 LANGUAGES CXX C)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Sql)
+find_package(Qt6 REQUIRED COMPONENTS Quick Sql QuickControls2 QuickDialogs2)
 
 qt_standard_project_setup(REQUIRES 6.6)
 
@@ -89,6 +89,7 @@ endif()
 # ==============================================================================
 # 4. APP TARGET
 # ==============================================================================
+
 qt_add_executable(appDCharVault
     MANUAL_FINALIZATION
     main.cpp
@@ -100,17 +101,20 @@ qt_add_qml_module(appDCharVault
     QML_FILES
         Main.qml
         ui/login.qml
-    SOURCES 
+        ui/HomeView.qml
+        ui/EditorView.qml
+        ui/EditorToolbar.qml
+        ui/SidebarView.qml
+    SOURCES
         model/DiaryEntry.h
         model/DiaryManager.h
         model/DiaryEntry.cpp
         model/VaultModel.cpp
         viewmodel/LoginViewModel.cpp
-        QML_FILES ui/HomeView.qml
-        QML_FILES ui/EditorView.qml
-        SOURCES model/DiaryManager.cpp
-        QML_FILES ui/EditorToolbar.qml
-        QML_FILES ui/SidebarView.qml
+        model/DiaryManager.cpp
+    RESOURCES
+        # app_icon.rc
+
 )
 
 set_target_properties(appDCharVault PROPERTIES
@@ -124,6 +128,8 @@ set_target_properties(appDCharVault PROPERTIES
 target_link_libraries(appDCharVault
     PRIVATE Qt6::Quick
     PRIVATE Qt6::Sql
+    PRIVATE Qt6::QuickControls2
+    PRIVATE Qt6::QuickDialogs2
     PRIVATE ${SODIUM_LIB}      
     PRIVATE ${ANDROID_LOG_LIB} 
 )
