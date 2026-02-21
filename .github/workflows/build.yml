@@ -28,10 +28,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential libgl1-mesa-dev libsodium-dev pkg-config
 
-    - name: Install Qt 6.6.3
+    - name: Install Qt 6.8.2
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.6.3'
+        version: '6.8.2'
         host: 'linux'
         modules: 'qt5compat qtshadertools qtquick3d'
         cache: true
@@ -58,10 +58,10 @@ jobs:
         vcpkg install --triplet x64-windows
         echo "SODIUM_ROOT_ENV=${{ github.workspace }}/vcpkg_installed/x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-    - name: Install Qt 6.6.3
+    - name: Install Qt 6.8.2
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.6.3'
+        version: '6.8.2'
         host: 'windows'
         arch: 'win64_msvc2019_64'
         modules: 'qt5compat qtshadertools qtquick3d'
@@ -112,7 +112,7 @@ jobs:
     - name: Install Qt Host
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.6.3'
+        version: '6.8.2'
         host: 'linux'
         target: 'desktop'
         cache: true
@@ -121,7 +121,7 @@ jobs:
     - name: Install Qt Target
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.6.3'
+        version: '6.8.2'
         host: 'linux'
         target: 'android'
         arch: 'android_arm64_v8a'
@@ -140,7 +140,7 @@ jobs:
     # 4. Configure CMake (DEBUG MODE)
     - name: Configure CMake
       run: |
-        export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.6.3/gcc_64
+        export QT_HOST_PATH=${{ runner.workspace }}/Qt/6.8.2/gcc_64 
         
         qt-cmake -B build -DCMAKE_BUILD_TYPE=Debug \
         -DQT_ANDROID_BUILD_ALL_ABIS=OFF \
