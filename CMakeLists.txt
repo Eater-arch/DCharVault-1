@@ -127,6 +127,8 @@ qt_add_qml_module(appDCharVault
         model/VaultModel.cpp
         viewmodel/LoginViewModel.cpp
         model/DiaryManager.cpp
+        SOURCES model/DatabaseManager.cpp
+        SOURCES model/DatabaseManager.h
 )
 
 set_target_properties(appDCharVault PROPERTIES
