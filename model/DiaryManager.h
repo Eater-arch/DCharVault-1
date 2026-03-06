@@ -58,14 +58,14 @@ public:
     DiaryManager() = default;
     
     // The worker function: Called later when the user interacts with the UI.
-    [[nodiscard]] DiaryError openDiary(const std::string& path, const std::string& password);
+    [[nodiscard]] DiaryError openDiary(const QString& path, const std::string& password);
 
     std::vector<DiaryEntrySummary> readEntrySummaries() const;
     // const std::vector<DiaryEntry>& readEntries() const noexcept;
     const DiaryEntry* readEntry(const int64_t id) const noexcept;
     // This is "Handle-based access" and is much safer for vectors.
     //[[nodiscard]] : if someone ignore return value error then warn them!!
-    [[nodiscard]] int64_t createEntry(const std::string& title, const std::string& content);
+    [[nodiscard]] int64_t createEntry(const QString& title, const QString& content);
     [[nodiscard]] DiaryError updateEntry(const int64_t id, const std::string& title, const std::string& content);
     [[nodiscard]] DiaryError deleteEntry(const int64_t id);
 

@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include<QDebug>
+#include<QDateTime>
 
 // --- Helpers ---
 DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
@@ -11,8 +12,8 @@ DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
 }
 
 // --- Core Features ---
-[[nodiscard]] DiaryError DiaryManager::openDiary(const std::string& path, const std::string& password) {
-    if(!dbManager.databaseInit(QString::fromStdString(path))){
+[[nodiscard]] DiaryError DiaryManager::openDiary(const QString& path, const std::string& password) {
+    if(!dbManager.databaseInit(path)){
         return DiaryError::DatabaseOpenError;
     }
     if(!dbManager.createTable()){
@@ -49,9 +50,17 @@ DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
     return DiaryError::None;
 }
 
-[[nodiscard]] int64_t DiaryManager::createEntry(const std::string& title, const std::string& content) {
+[[nodiscard]] int64_t DiaryManager::createEntry(const QString& title, const QString& content) {
     // TODO: Encrypt text, call dbManager.insertEntry(), get new ID, add to vector.
-    return -1;
+    if(masterKey.empty()){
+        qCritical()<<"Master Key is Empty! can't create a new entry to this journal";
+        return -1;
+    }
+    QByteArray titleEncrypted = encManager.encryptString(title,masterKey);
+    QByteArray contentEncrypted = encManager.encryptString(content,masterKey);
+    qint64 timeStamp = QDateTime::currentSecsSinceEpoch();
+    int64_t insertedId = dbManager.insertEntry("Hardcoded journal",timeStamp,titleEncrypted,contentEncrypted);
+    return insertedId;
 }
 
 std::vector<DiaryEntrySummary> DiaryManager::readEntrySummaries() const {

@@ -22,13 +22,72 @@ Page {
     property alias entryContent: editorArea.text
     property alias readOnly: editorArea.readOnly
 
-    Action { id: saveAction; text: "Save"; shortcut: StandardKey.Save; enabled: editorArea.textDocument.modified; onTriggered: console.log("Save Action Triggered!") }
-    Action { id: reloadAction; text: "Reload From Disk"; shortcut: "Ctrl+Shift+R"; onTriggered: console.log("Reload Triggered!") }
-    Action { id: undoAction; text: "Undo"; shortcut: StandardKey.Undo; enabled: editorArea.canUndo; onTriggered: editorArea.undo() }
-    Action { id: redoAction; text: "Redo"; shortcut: StandardKey.Redo; enabled: editorArea.canRedo; onTriggered: editorArea.redo() }
-    Action { id: cutAction; text: "Cut"; shortcut: StandardKey.Cut; enabled: editorArea.selectedText.length > 0; onTriggered: editorArea.cut() }
-    Action { id: copyAction; text: "Copy"; shortcut: StandardKey.Copy; enabled: editorArea.selectedText.length > 0; onTriggered: editorArea.copy() }
-    Action { id: pasteAction; text: "Paste"; shortcut: StandardKey.Paste; enabled: true; onTriggered: editorArea.paste() }
+    Connections{
+        target: diaryViewModel
+        function onEntrySavedSuccessfully(){
+            console.log("QML: Success! Entry locked and saved in SQLite.")
+            // Reset the UI for the next entry
+                        titleField.text = ""
+                        editorArea.text = ""
+            editorArea.textDocument.modified = false
+        }
+        function onEntrySaveFailed(errorMessage){
+            console.error("QML Error: " + errorMessage)
+        }
+    }
+
+
+    Action {
+        id: saveAction
+        text: "Save"
+        shortcut: StandardKey.Save // ctrl+S
+        enabled: editorArea.textDocument.modified
+        onTriggered: {
+            console.log("QML: Sending entry to viewModel: diaryViewModel.cpp");
+            diaryViewModel.saveNewEntry(titleField.text,editorArea.text);
+        }
+    }
+    Action {
+        id: reloadAction
+        text: "Reload From Disk"
+        shortcut: "Ctrl+Shift+R"
+        onTriggered: console.log("Reload Triggered! Currently in Development!!")
+    }
+    Action {
+        id: undoAction
+        text: "Undo"
+        shortcut: StandardKey.Undo // ctrl+Z
+        enabled: editorArea.canUndo
+        onTriggered: editorArea.undo()
+    }
+    Action {
+        id: redoAction
+        text: "Redo"
+        shortcut: StandardKey.Redo // ctrl+Y or ctrl+shift+Z
+        enabled: editorArea.canRedo
+        onTriggered: editorArea.redo()
+    }
+    Action {
+        id: cutAction
+        text: "Cut"
+        shortcut: StandardKey.Cut // ctrl+X
+        enabled: editorArea.selectedText.length > 0
+        onTriggered: editorArea.cut()
+    }
+    Action {
+        id: copyAction
+        text: "Copy"
+        shortcut: StandardKey.Copy // ctrl+C
+        enabled: editorArea.selectedText.length > 0
+        onTriggered: editorArea.copy()
+    }
+    Action {
+        id: pasteAction
+        text: "Paste"
+        shortcut: StandardKey.Paste // ctrl+V
+        enabled: true
+        onTriggered: editorArea.paste()
+    }
 
     ActionGroup { id: alignnmentGroup }
     Action { id: alignLeftAction; text: "Align Left"; shortcut: "Ctrl+L"; checkable: true; ActionGroup.group: alignnmentGroup; checked: editorArea.cursorSelection.alignment === Qt.AlignLeft; onTriggered: { editorArea.cursorSelection.alignment = Qt.AlignLeft; root.refreshCursor() } }

@@ -20,12 +20,10 @@ ToolBar {
     signal fontSelected(string fontName)
     signal fontSizeSelected(int sizeFont)
 
-    Material.elevation: 0
 
     // A tiny border line for desktop mode
     Rectangle {
         width: parent.width
-        height: 5
         anchors.bottom: parent.bottom
     }
 
@@ -36,6 +34,7 @@ ToolBar {
         contentWidth: toolbarLayout.implicitWidth
         contentHeight: parent.height
         clip: true
+
 
         RowLayout {
             id: toolbarLayout
