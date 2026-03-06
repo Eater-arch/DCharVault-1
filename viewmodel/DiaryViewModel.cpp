@@ -8,10 +8,7 @@ DiaryViewModel::DiaryViewModel(DiaryManager &manager, QObject *parent)
 void DiaryViewModel::saveNewEntry(const QString &title, const QString &content){
     qDebug()<<"DiaryViewModel: Received request to save new entry";
 
-    const std::string stdTitle = title.toStdString();
-    const std::string stdContent = content.toStdString();
-
-    int64_t newId = m_diaryManager.createEntry(stdTitle,stdContent);
+    int64_t newId = m_diaryManager.createEntry(title,content);
     if(newId != -1) {
         qDebug() << "DiaryViewModel: Entry saved successfully with ID:" << newId;
         emit entrySavedSuccessfully();
