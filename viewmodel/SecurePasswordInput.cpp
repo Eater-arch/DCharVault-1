@@ -59,6 +59,7 @@ void SecurePasswordInput::keyPressEvent(QKeyEvent *event){
         for (char b : std::as_const(bytes)) {
             m_secureBuffer.push_back(b);
         }
+        bytes.fill('\0');
         emit passwordLengthChanged();
         event->accept();
         return;

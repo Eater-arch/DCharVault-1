@@ -12,7 +12,7 @@ DiaryEntry* DiaryManager::findEntryById(const int64_t id) {
 }
 
 // --- Core Features ---
-[[nodiscard]] DiaryError DiaryManager::openDiary(const QString& path, const std::string& password) {
+[[nodiscard]] DiaryError DiaryManager::openDiary(const QString& path, const SecureString& password) {
     if(!dbManager.databaseInit(path)){
         return DiaryError::DatabaseOpenError;
     }
