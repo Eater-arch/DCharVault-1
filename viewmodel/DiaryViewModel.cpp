@@ -11,18 +11,25 @@ void DiaryViewModel::saveNewEntry(const qint64 id, const QString &title, const Q
         int64_t newId = m_diaryManager.createEntry(title,content);
         if(newId != -1) {
             qDebug() << "DiaryViewModel: Entry saved successfully with ID:" << newId;
-            emit entrySavedSuccessfully(newId);
+            QString finalizeTitle = loadEntryTitle(newId);
+            emit entrySavedSuccessfully(newId,finalizeTitle);
         } else {
             qCritical() << "DiaryViewModel: Failed to save entry.";
             emit entrySaveFailed("Failed to encrypt or save the entry to the database.");
         }
     }else{
         if(m_diaryManager.updateEntry(id,title,content)==DiaryError::None){
-          emit entrySavedSuccessfully(id);
+            QString finalizeTitle = loadEntryTitle(id);
+          emit entrySavedSuccessfully(id,finalizeTitle);
         }else{
             emit entrySaveFailed("Failed to update Entry");
         }
     }
+}
+
+QString DiaryViewModel::loadEntryTitle(const qint64 id){
+    qDebug()<<"DiaryViewModel: Received request to load title for ID: <<id;";
+    return m_diaryManager.readEntryTitle(id);
 }
 
 QString DiaryViewModel::loadEntryContent(const qint64 id){

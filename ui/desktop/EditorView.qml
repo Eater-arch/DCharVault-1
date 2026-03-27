@@ -26,11 +26,13 @@ Page {
 
     Connections{
         target: diaryViewModel
-        function onEntrySavedSuccessfully(savedId){
+        function onEntrySavedSuccessfully(savedId, finalizeTitle){
             console.log("QML: Success! Entry locked and saved in SQLite.")
             diaryListModel.loadEntries()
             root.currentEntryId = savedId
             editorArea.textDocument.modified = false
+            titleField.text = finalizeTitle
+            originalTitle = finalizeTitle
         }
         function onEntrySaveFailed(errorMessage){
             console.error("QML Error: " + errorMessage)
