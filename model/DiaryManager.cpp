@@ -122,9 +122,10 @@ std::vector<DiaryEntrySummary> DiaryManager::loadAllMetadata(){
 
     QByteArray titleEncrypted;
     if(title.isEmpty()){
+        QString htmlChunk = content.left(1024);
         QTextDocument textDoc;
-        textDoc.setHtml(content);
-        QString textClean = textDoc.toPlainText();
+        textDoc.setHtml(htmlChunk);
+        QString textClean = textDoc.toPlainText().simplified();
         const std::string contentStr = textClean.toStdString();
         size_t len = std::min(contentStr.size(),(size_t)16);
         const std::string contentHead = contentStr.substr(0,len);
@@ -156,7 +157,7 @@ QString DiaryManager::readEntryTitle(int64_t id){
         qCritical() << "Fatal: Master Key is empty. Cannot decrypt content.";
         return "";
     }
-    QByteArray encryptedTitle = dbManager.getEntryId(id);
+    QByteArray encryptedTitle = dbManager.getEntryTitle(id);
     if(encryptedTitle.isEmpty()){
         return "";
     }
@@ -202,9 +203,10 @@ QString DiaryManager::readEntryContent(int64_t id){
 
     QByteArray titleEncrypted;
     if(title.isEmpty()){
+        QString htmlChunk = content.left(1024);
         QTextDocument textDoc;
-        textDoc.setHtml(content);
-        QString textClean = textDoc.toPlainText();
+        textDoc.setHtml(htmlChunk);
+        QString textClean = textDoc.toPlainText().simplified();
         const std::string contentStr = textClean.toStdString();
         size_t len = std::min(contentStr.size(),(size_t)16);
         const std::string contentHead = contentStr.substr(0,len);

@@ -109,7 +109,7 @@ QByteArray DatabaseManager::getEntryContent(int64_t id) const{
     return QByteArray();
 }
 
-QByteArray DatabaseManager::getEntryId(int64_t id) const{
+QByteArray DatabaseManager::getEntryTitle(int64_t id) const{
     QSqlQuery query;
     query.prepare("SELECT encrypted_title FROM journal WHERE id = :id");
     query.bindValue(":id",QVariant::fromValue(id));

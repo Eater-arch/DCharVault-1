@@ -14,7 +14,7 @@ public:
     Q_INVOKABLE QString loadEntryTitle(const qint64 id);
     Q_INVOKABLE void deleteEntry(const qint64 id);
 signals:
-    void entrySavedSuccessfully(const qint64 savedId, const QString finalizeTitle);
+    void entrySavedSuccessfully(const qint64 savedId, const QString& finalizeTitle);
     void entrySaveFailed(const QString& errorMessage);
     void entryDeletedSuccessfully();
     void entryDeleteFailed();
