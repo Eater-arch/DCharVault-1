@@ -24,9 +24,9 @@ Page {
     property alias entryContent: editorArea.text
     property alias readOnly: editorArea.readOnly
 
-    Connections{
+    Connections {
         target: diaryViewModel
-        function onEntrySavedSuccessfully(savedId, finalizeTitle){
+        function onEntrySavedSuccessfully(savedId, finalizeTitle) {
             console.log("QML: Success! Entry locked and saved in SQLite.")
             diaryListModel.loadEntries()
             root.currentEntryId = savedId
@@ -34,10 +34,10 @@ Page {
             titleField.text = finalizeTitle
             originalTitle = finalizeTitle
         }
-        function onEntrySaveFailed(errorMessage){
+        function onEntrySaveFailed(errorMessage) {
             console.error("QML Error: " + errorMessage)
         }
-        function onEntryDeletedSuccessfully(){
+        function onEntryDeletedSuccessfully() {
             console.log("QML: Entry deleted. Clearing editor.")
             diaryListModel.loadEntries()
             root.currentEntryId = -1
@@ -51,20 +51,24 @@ Page {
         id: saveAction
         text: "Save"
         shortcut: StandardKey.Save // ctrl+S
-        enabled: editorArea.textDocument.modified || titleField.text!==originalTitle
+        enabled: editorArea.textDocument.modified
+                 || titleField.text !== originalTitle
         onTriggered: {
-            console.log("QML: Sending entry to viewModel: diaryViewModel.cpp");
-            console.log("CRITICAL DEBUG -> Hitting Save! currentEntryId is:", root.currentEntryId);
-            diaryViewModel.saveNewEntry(root.currentEntryId,titleField.text,editorArea.text);
+            console.log("QML: Sending entry to viewModel: diaryViewModel.cpp")
+            console.log("CRITICAL DEBUG -> Hitting Save! currentEntryId is:",
+                        root.currentEntryId)
+            diaryViewModel.saveNewEntry(root.currentEntryId, titleField.text,
+                                        editorArea.text)
             originalTitle = titleField.text
             editorArea.textDocument.modified = false
         }
     }
-    Action{
+    Action {
         id: deleteAction
         text: "delete"
         shortcut: StandardKey.Delete
-        enabled: root.currentEntryId!=-1 && editorArea.text!=="[[encryption failed]]"// only when we have a entry not blanked and text is [[encryption failed]]
+        enabled: root.currentEntryId != -1
+                 && editorArea.text !== "[[encryption failed]]" // only when we have a entry not blanked and text is [[encryption failed]]
 
         onTriggered: {
             console.log("QML: Requesting deletion of ID:", root.currentEntryId)
@@ -113,14 +117,70 @@ Page {
         onTriggered: editorArea.paste()
     }
 
-    ActionGroup { id: alignnmentGroup }
-    Action { id: alignLeftAction; text: "Align Left"; shortcut: "Ctrl+L"; checkable: true; ActionGroup.group: alignnmentGroup; checked: editorArea.cursorSelection.alignment === Qt.AlignLeft; onTriggered: { editorArea.cursorSelection.alignment = Qt.AlignLeft; root.refreshCursor() } }
-    Action { id: alignCentreAction; text: "Align Centre"; shortcut: "Ctrl+E"; checkable: true; ActionGroup.group: alignnmentGroup; checked: editorArea.cursorSelection.alignment === Qt.AlignCenter; onTriggered: { editorArea.cursorSelection.alignment = Qt.AlignCenter; root.refreshCursor() } }
-    Action { id: alignRightAction; text: "Align Right"; shortcut: "Ctrl+R"; checkable: true; ActionGroup.group: alignnmentGroup; checked: editorArea.cursorSelection.alignment === Qt.AlignRight; onTriggered: { editorArea.cursorSelection.alignment = Qt.AlignRight; root.refreshCursor() } }
+    ActionGroup {
+        id: alignnmentGroup
+    }
+    Action {
+        id: alignLeftAction
+        text: "Align Left"
+        shortcut: "Ctrl+L"
+        checkable: true
+        ActionGroup.group: alignnmentGroup
+        checked: editorArea.cursorSelection.alignment === Qt.AlignLeft
+        onTriggered: {
+            editorArea.cursorSelection.alignment = Qt.AlignLeft
+            root.refreshCursor()
+        }
+    }
+    Action {
+        id: alignCentreAction
+        text: "Align Centre"
+        shortcut: "Ctrl+E"
+        checkable: true
+        ActionGroup.group: alignnmentGroup
+        checked: editorArea.cursorSelection.alignment === Qt.AlignCenter
+        onTriggered: {
+            editorArea.cursorSelection.alignment = Qt.AlignCenter
+            root.refreshCursor()
+        }
+    }
+    Action {
+        id: alignRightAction
+        text: "Align Right"
+        shortcut: "Ctrl+R"
+        checkable: true
+        ActionGroup.group: alignnmentGroup
+        checked: editorArea.cursorSelection.alignment === Qt.AlignRight
+        onTriggered: {
+            editorArea.cursorSelection.alignment = Qt.AlignRight
+            root.refreshCursor()
+        }
+    }
 
-    Action { id: boldAction; text: "Bold"; shortcut: StandardKey.Bold; checkable: true; checked: editorArea.cursorSelection.font.bold; onTriggered: editorArea.cursorSelection.font.bold = checked }
-    Action { id: italicAction; text: "Italic"; shortcut: StandardKey.Italic; checkable: true; checked: editorArea.cursorSelection.font.italic; onTriggered: editorArea.cursorSelection.font.italic = checked }
-    Action { id: underlineAction; text: "Underline"; shortcut: StandardKey.Underline; checkable: true; checked: editorArea.cursorSelection.font.underline; onTriggered: editorArea.cursorSelection.font.underline = checked }
+    Action {
+        id: boldAction
+        text: "Bold"
+        shortcut: StandardKey.Bold
+        checkable: true
+        checked: editorArea.cursorSelection.font.bold
+        onTriggered: editorArea.cursorSelection.font.bold = checked
+    }
+    Action {
+        id: italicAction
+        text: "Italic"
+        shortcut: StandardKey.Italic
+        checkable: true
+        checked: editorArea.cursorSelection.font.italic
+        onTriggered: editorArea.cursorSelection.font.italic = checked
+    }
+    Action {
+        id: underlineAction
+        text: "Underline"
+        shortcut: StandardKey.Underline
+        checkable: true
+        checked: editorArea.cursorSelection.font.underline
+        onTriggered: editorArea.cursorSelection.font.underline = checked
+    }
 
     ColorDialog {
         id: colorPickerDialog
@@ -135,16 +195,17 @@ Page {
             editorArea.forceActiveFocus()
         }
     }
-    MessageDialog{
+    MessageDialog {
         id: deleteConfirmDialog
         title: "Delete Entry"
         text: "Are you sure you want to permanently delete this page?"
         informativeText: "This action cannot be undone. The encrypted data will be wiped from the vault."
         buttons: MessageDialog.Yes | MessageDialog.No
-        onButtonClicked: function(button,role){
-            if(button === MessageDialog.Yes){
-                console.log("QML: User confirmed. Requesting deletion of ID:", root.currentEntryId)
-                diaryViewModel.deleteEntry(root.currentEntryId);
+        onButtonClicked: function (button, role) {
+            if (button === MessageDialog.Yes) {
+                console.log("QML: User confirmed. Requesting deletion of ID:",
+                            root.currentEntryId)
+                diaryViewModel.deleteEntry(root.currentEntryId)
             }
         }
     }
@@ -161,9 +222,9 @@ Page {
         onUnderlineClicked: underlineAction.trigger()
 
         onFontSizeSelected: size => {
-            editorArea.cursorSelection.font.pointSize = size
-            editorArea.forceActiveFocus()
-        }
+                                editorArea.cursorSelection.font.pointSize = size
+                                editorArea.forceActiveFocus()
+                            }
 
         onColorClicked: {
             root.colorMode = 0
@@ -198,7 +259,11 @@ Page {
                 background: null
                 selectByMouse: true
                 padding: 0
-
+                Keys.onReturnPressed: moveFocusEditor()
+                Keys.onEnterPressed: moveFocusEditor()
+                function moveFocusEditor() {
+                    editorArea.focus = true
+                }
             }
 
             Rectangle {
@@ -223,24 +288,23 @@ Page {
             flickableDirection: Flickable.VerticalFlick
             clip: true
 
-            ScrollBar.vertical: ScrollBar {}
+            ScrollBar.vertical: ScrollBar { width: 9}
 
             TextArea.flickable: TextArea {
                 id: editorArea
                 topPadding: 8
-
-                // CRITICAL FIX: Use RichText to allow colors, backgrounds, and sizes to save properly
                 textFormat: TextEdit.RichText
 
                 font.pointSize: 12
-                font.family: "Georgia" // Great choice for reading!
+                font.family: "Open Sans"
                 wrapMode: Text.Wrap
                 background: null
                 persistentSelection: true
                 color: "#333333" // Softer black for long-form reading
 
                 onCursorPositionChanged: {
-                    if (editorArea.inputMethodComposing) return
+                    if (editorArea.inputMethodComposing)
+                        return
 
                     let size = editorArea.cursorSelection.font.pointSize
                     if (size !== undefined && size > 0) {

@@ -92,6 +92,12 @@ Item {
                     bottomMargin: 12
                     spacing: 8
 
+                    ScrollBar.vertical: ScrollBar {
+                        width: 8
+                        policy: ScrollBar.AsNeeded // Only shows if content is larger than view
+                        active: true // Keeps it visible while scrolling
+                    }
+
                     model: diaryListModel
 
                     delegate: Rectangle {
@@ -137,7 +143,7 @@ Item {
                             anchors.fill: parent
                             onClicked: {
                                 noteList.currentIndex = index
-                                root.entrySelected(model.id,model.title)
+                                root.entrySelected(model.id, model.title)
                             }
                         }
                     }
