@@ -22,37 +22,38 @@
 ## 📝 About the Project
 
 **DCharVault** is an offline-first, highly secure diary and journaling app designed to keep your private thoughts truly private. In an era where data is often stored on cloud servers and vulnerable to breaches, DCharVault ensures that your entries never leave your device unencrypted, and are never accessible in plain text.
-
-It provides a seamless, modern interface across Desktop and Mobile, utilizing the power of **C++20** and **Qt 6.8** for native performance, and **Libsodium** for state-of-the-art cryptography.
-
-<!-- *Placeholder for App Screenshot / GIF* -->
-<!-- <div align="center">
-  <img src="docs/assets/screenshot.png" alt="DCharVault Application Screenshot" width="800"/>
-</div> -->
+**DCharVault** was built as a personal project to explore the complexities of integrating low-level cryptographic memory management with a high-level cross-platform GUI framework. 
 
 ---
 
-## ✨ Key Features
+## ✨ Technical Highlights
 
-* 🔐 **Zero-Knowledge Architecture:** No telemetry, no cloud syncing. Your data is yours alone.
-* ⚡ **Native Performance:** Built on C++20 ensuring minimal overhead and fast execution.
-* 📱 **Cross-Platform:** Write on Windows, Linux, or Android using a single shared codebase with Qt QML.
-* 🎨 **Modern UI:** Clean, responsive, and adaptive user interface built with Qt Quick Controls.
-* 🛡️ **Advanced Memory Protection:** Protection against RAM scraping and cold-boot attacks.
+* 🛡️ **Advanced Memory Protection:** Implementation of a custom C++ STL-compatible allocator (`SecureAllocator`) that wraps Libsodium's memory management to prevent RAM scraping.
+* ⚡ **Native Execution:** Built entirely on C++20, ensuring minimal overhead and direct system-level API access.
+* 📱 **Unified UI Codebase:** A single Qt QML frontend rendering natively on Windows, Linux, and Android.
+* ⚙️ **Automated Build Architecture:** A robust GitHub Actions CI/CD pipeline handling complex dependency resolution (vcpkg, Android NDK) and dynamic linker patching (`patchelf`).
 
 ---
 
 ## 🛡️ Security Architecture
 
-DCharVault is meticulously designed to ensure **zero plaintext leakage** to disk or swap memory. 
+The cryptographic core is designed to minimize plaintext exposure in memory.
 
 * **Key Derivation (KDF):** Uses Argon2id (`crypto_pwhash`) with interactive limits to securely derive encryption keys from the master password.
 * **Data Encryption:** All entries and metadata are encrypted using **XChaCha20-Poly1305 (AEAD)**, providing both confidentiality and authenticated encryption.
 * **Memory Safety (`SecureAllocator`):** A custom C++ allocator wrapping `sodium_malloc` and `sodium_free`. This guarantees that sensitive data (keys, passwords, raw text) is:
-  * Protected by memory guard pages.
+  * Protected by OS-level memory guard pages.
   * Pinned in RAM (preventing swapping to disk).
   * Securely zeroed out before deallocation.
 * **Master Password Verification:** Verification is done via encrypted MAC blocks rather than storing key hashes, ensuring the password is never stored or logged.
+
+---
+
+## ⚠️ Known Limitations
+
+* *This is an architectural experiment; it has not undergone a formal security audit.*
+* *Does not protect against kernel-level keylogging or compromised OS environments.*
+* *UI and cross-platform UX are currently in experimental phases.*
 
 ---
 
