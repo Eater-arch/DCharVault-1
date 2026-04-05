@@ -143,10 +143,9 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 5. Open a Pull Request
 
 ---
-
 ## 📄 License
 
-This project is open-source. *(Please add your specific license here, e.g., MIT, GPLv3)*
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](https://github.com/DCharVault/DCharVault/blob/main/LICENSE) for details.
 
 ---
 <div align="center">
