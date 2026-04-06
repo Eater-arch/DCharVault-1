@@ -25,10 +25,6 @@ struct SecureAllocator{
         if(n>std::numeric_limits<std::size_t>::max()/sizeof(T)){
             throw std::bad_alloc();
         }
-
-        //currently sodium_malloc allocates memory and places guard pages around it
-        // i will do it to instantly crash app if buffer overflow attack occurs
-        
         // allocate size n*sizeof(T) from sodium malloc -> it return void* ptr if success else allocation failed it return nullptr
         // static cast <T*> = converts void* to T*
         // p here is a ptr to raw allocated memory large enough to hold n objects of type T
