@@ -7,6 +7,7 @@
 #include<vector>
 #include<string>
 #include<cstdint>
+#include<limits>
 
 template <typename T>
 struct SecureAllocator{
@@ -19,9 +20,9 @@ struct SecureAllocator{
     constexpr SecureAllocator(const SecureAllocator<U>&) noexcept{} 
 
     // allocator
-    T* allocate(std::size_t n){
+    [[nodiscard]] T* allocate(std::size_t n){
         // check if n fit in std::size_t size
-        if(n>std::size_t(-1)/sizeof(T)){
+        if(n>std::numeric_limits<std::size_t>::max()/sizeof(T)){
             throw std::bad_alloc();
         }
 
