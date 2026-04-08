@@ -156,7 +156,7 @@ jobs:
         
 
         # copy missing MSVC Runtime DLLs from build system folder note: x64 only!!
-        $msvcDlls = @("vcruntime140_1.dll", "msvcp140.dll", "vcruntime140.dll")
+        $msvcDlls = @("vcruntime140_1.dll", "MSVCP140_1.dll","MSVCP140_2.dll", "vcruntime140.dll")
         foreach ($dll in $msvcDlls) {
           $dllPath = "C:\Windows\System32\$dll"
           if (Test-Path $dllPath) {
